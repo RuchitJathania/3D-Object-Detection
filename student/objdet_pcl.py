@@ -120,12 +120,13 @@ def bev_from_pcl(lidar_pcl, configs):
 
     for i in range(len(lidar_pcl_copy[:,0])):
         lidar_pcl_copy[i,0] = np.int_(lidar_pcl_copy[i,0]/discre)
-
     # step 3 : perform the same operation as in step 2 for the y-coordinates but make sure that no negative bev-coordinates occur
     for i in range(len(lidar_pcl_copy[:,1])):
         lidar_pcl_copy[i,1]= np.int_(lidar_pcl_copy[i,1]/discre)
-    lidar_pcl_copy[:,1]=lidar_pcl_copy[:,1]-min(lidar_pcl_copy[:,1])
-
+    print(min(lidar_pcl_copy[:,1]))
+    print(max(lidar_pcl_copy[:,1]))
+    #lidar_pcl_copy[:,1]=lidar_pcl_copy[:,1]+min(lidar_pcl_copy[:,1])
+    lidar_pcl_copy[:,1]=lidar_pcl_copy[:,1]+(configs.bev_height/2)
     # step 4 : visualize point-cloud using the function show_pcl from a previous task
     #show_pcl(lidar_pcl_copy)
     #######
@@ -165,7 +166,7 @@ def bev_from_pcl(lidar_pcl, configs):
     # b = np.array([0, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, .15, .25, .35, .45, 0.55, 0.65, 0.75, 1.0])
     # hist,bins = np.histogram(int_pcl[:,3], bins=b)
     # print(hist)
-    bev_int[np.int_(top_pcl[:,0]),np.int_(top_pcl[:,1])] = top_pcl[:,3]/(np.amax(top_pcl[:,3])+np.amin(top_pcl[:,3]))
+    bev_int[np.int_(top_pcl[:,0]),np.int_(top_pcl[:,1])] = ((2)*top_pcl[:,3])/(np.amax(top_pcl[:,3])+np.amin(top_pcl[:,3]))
     ## step 5 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
     img_intensity = bev_int * 256
     img_intensity = img_intensity.astype(np.uint8)
@@ -210,7 +211,7 @@ def bev_from_pcl(lidar_pcl, configs):
 
     # Compute density layer of the BEV map
     density_map = np.zeros((configs.bev_height, configs.bev_width))
-    _, _, counts = np.unique(lidar_pcl_cpy[:, 0:2], axis=0, return_index=True, return_counts=True)
+    #_, _, counts = np.unique(lidar_pcl_cpy[:, 0:2], axis=0, return_index=True, return_counts=True)
     normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64)) 
     density_map[np.int_(lidar_pcl_top[:, 0]), np.int_(lidar_pcl_top[:, 1])] = normalizedCounts
         
@@ -226,7 +227,6 @@ def bev_from_pcl(lidar_pcl, configs):
 
     bev_maps = torch.from_numpy(bev_maps)  # create tensor from birds-eye view
     input_bev_maps = bev_maps.to(configs.device, non_blocking=True).float()
-    print(input_bev_maps)
     return input_bev_maps
 
 
