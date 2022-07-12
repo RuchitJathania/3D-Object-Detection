@@ -41,20 +41,18 @@ def show_pcl(pcl):
     print("student task ID_S1_EX2")
     # step 1 : initialize open3d with key callback and create window
     vis = o3d.visualization.VisualizerWithKeyCallback()
-    vis.register_key_callback(262,key_func)
     vis.create_window()
     # step 2 : create instance of open3d point-cloud class
     pcd = o3d.geometry.PointCloud()
     # step 3 : set points in pcd instance by converting the point-cloud into 3d vectors (using open3d function Vector3dVector)
     pcd.points = o3d.utility.Vector3dVector(pcl[:,:3])
     # step 4 : for the first frame, add the pcd instance to visualization using add_geometry; for all other frames, use update_geometry instead
-    disp = False
-    if not disp:
-        vis.add_geometry(pcd)
-    else:
-        disp = True
-        vis.update_geometry(pcd)
+    vis.add_geometry(pcd)
+    vis.update_renderer()
+    vis.update_geometry(pcd)
+    vis.register_key_callback(262,key_func)
     # step 5 : visualize point cloud and keep window open until right-arrow is pressed (key-code 262)
+    vis.poll_events()
     vis.run()
     #######
     ####### ID_S1_EX2 END #######     
@@ -129,7 +127,7 @@ def bev_from_pcl(lidar_pcl, configs):
     lidar_pcl_copy[:,1]=lidar_pcl_copy[:,1]-min(lidar_pcl_copy[:,1])
 
     # step 4 : visualize point-cloud using the function show_pcl from a previous task
-    show_pcl(lidar_pcl_copy)
+    #show_pcl(lidar_pcl_copy)
     #######
     ####### ID_S2_EX1 END #######     
     
@@ -171,6 +169,7 @@ def bev_from_pcl(lidar_pcl, configs):
     ## step 5 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
     img_intensity = bev_int * 256
     img_intensity = img_intensity.astype(np.uint8)
+    img_intensity = cv2.rotate(img_intensity, cv2.ROTATE_180)
     while (1):
         cv2.imshow('img_intensity', img_intensity)
         if cv2.waitKey(10) & 0xFF == 27:
@@ -194,6 +193,7 @@ def bev_from_pcl(lidar_pcl, configs):
     ## step 3 : temporarily visualize the intensity map using OpenCV to make sure that vehicles separate well from the background
     img_height = bev_height * 256
     img_height = img_height.astype(np.uint8)
+    img_height = cv2.rotate(img_height, cv2.ROTATE_180)
     while (1):
         cv2.imshow('img_height', img_height)
         if cv2.waitKey(10) & 0xFF == 27:
@@ -203,13 +203,13 @@ def bev_from_pcl(lidar_pcl, configs):
     ####### ID_S2_EX3 END #######       
 
     # TODO remove after implementing all of the above steps
-    lidar_pcl_cpy = []
-    lidar_pcl_top = []
-    height_map = []
-    intensity_map = []
+    lidar_pcl_cpy = lidar_pcl_copy
+    lidar_pcl_top = top_pcl
+    height_map = bev_height
+    intensity_map = bev_int
 
     # Compute density layer of the BEV map
-    density_map = np.zeros((configs.bev_height + 1, configs.bev_width + 1))
+    density_map = np.zeros((configs.bev_height, configs.bev_width))
     _, _, counts = np.unique(lidar_pcl_cpy[:, 0:2], axis=0, return_index=True, return_counts=True)
     normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64)) 
     density_map[np.int_(lidar_pcl_top[:, 0]), np.int_(lidar_pcl_top[:, 1])] = normalizedCounts
@@ -219,7 +219,6 @@ def bev_from_pcl(lidar_pcl, configs):
     bev_map[2, :, :] = density_map[:configs.bev_height, :configs.bev_width]  # r_map
     bev_map[1, :, :] = height_map[:configs.bev_height, :configs.bev_width]  # g_map
     bev_map[0, :, :] = intensity_map[:configs.bev_height, :configs.bev_width]  # b_map
-
     # expand dimension of bev_map before converting into a tensor
     s1, s2, s3 = bev_map.shape
     bev_maps = np.zeros((1, s1, s2, s3))
@@ -227,6 +226,7 @@ def bev_from_pcl(lidar_pcl, configs):
 
     bev_maps = torch.from_numpy(bev_maps)  # create tensor from birds-eye view
     input_bev_maps = bev_maps.to(configs.device, non_blocking=True).float()
+    print(input_bev_maps)
     return input_bev_maps
 
 
