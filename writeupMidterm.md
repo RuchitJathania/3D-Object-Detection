@@ -1,4 +1,4 @@
-__Note: I have completed the tasks as described in "Project Instructions Steps" 1 through 4. I noticed that the program doesn't include instructions nor does the Udacity page to complete the density bev map even though the other functions require all three bev maps: range, intensity, and density. I am not sure if I need to complete this part of the program. Also, in the rubric there is a "Crop range image to +/- 90 degree" but the program includes no instruction to complete this part. Again, I am not sure if I needed to do this step. If there is a review before final submission, please let me know what steps I need to fix, and what I need to add if anything. Thank you__
+__Note: I have completed the tasks as described in "Project Instructions Steps" 1 through 4. I noticed that the program doesn't include instructions nor does the Udacity page to complete the density bev map even though the other functions require all three bev maps: range, intensity, and density but I have completed the density map. Also, in the rubric there is a "Crop range image to +/- 90 degree" but the program includes no instruction to complete this part. Again, I am not sure if I needed to do this step.__
 
 # 3D Object Detection Project Writeup
 ## Varying visibility examples
@@ -39,6 +39,20 @@ Here, the trailer's back and the truck's rear are both visible since they are at
 Since a car is too close to the LiDAR, the bottom of the car can't be detected in the point-cloud
 
 ![](pictures/varyingVisibility/11.png)
+
+![](pictures/varyingVisibility/12.png)
+
+![](pictures/varyingVisibility/13.png)
+
+![](pictures/varyingVisibility/14.png)
+![](pictures/varyingVisibility/14-1.png)
+
+![](pictures/varyingVisibility/15.png)
+![](pictures/varyingVisibility/15-1.png)
+
+
+![](pictures/varyingVisibility/16.png)
+
 
 ## Stable Feature examples
 ![](pictures/commonFeatures/1.png)
