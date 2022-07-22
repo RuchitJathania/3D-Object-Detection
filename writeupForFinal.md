@@ -5,27 +5,27 @@
 ## Filter Step:
 In order to complete the Filter class, working predict() and update() functions needed to be created. First, proper Q, F, gamma, and S matrices needed to be written. F was just a linear relation with position and velocity using dt in a 6 by 6 form, while the process noise covariance was calculated through the integral and is a 6 by 6 matrix as well. Gamma was completed using the get_hx() method in order to work for lidar and camera measurements. Then the predict and update used the regular kalman filter equations with the exception of H matrix depending on the sensor type for the measurement. 
 
-![](pictures/FinalProjectPics/step1_ex1.png)
+![](pictures/Final_Pics/step1_ex1.png)
 
-![](pictures/FinalProjectPics/step1_error.png)
+![](pictures/Final_Pics/step1_error.png)
 A single track based implementation after the first step completion was successful as seen by the RMSE error chart. 
 
 ## Track Management Step:
 The second step involved implementing the track management part including finishing the Trackmanagement class and Track class. First the 6 by 1 x vector was initialized with the measurement and updated from sensor to vehicle coordinates. Then the estimation error covariance matrix P is initialized using rotation matrix and R for the position variance and the velocity uncertainties for the velocity variance and combined into a 6 by 6 matrix. The state of an initialized track is 'initialized' and the score is set to `1./params.window`. Then the manage track function decreases the track score for unassigned tracks still in the fov of the respective sensor and deletes tracks that are old, track score is too low, or estimation error covariance is too high. Finally, a track that is there and being updated will increase the score by `+=1./params.window` until it reaches `1.0` and becomes tentative if first initialized or becomes confirmed if it was tentative and the track score has reached a threshold.
 
-![](pictures/FinalProjectPics/step2_trackmanagement_error.png)
+![](pictures/Final_Pics/step2_trackmanagement_error.png)
 The single car is internalized, then confirmed and deleted.
 
 ## Data Association Step:
 A simple nearest neighbor data association for tracks and measurements for subsequent updates is implemented with gating. First, the `associate` function initializes the unassigned tracks and measurements list with the indices of tracks and measurement list and the association matrix is made using the mahalanobis distances if the measurement is within the gating for that track. Next, the `get_closest_track_and_meas` function finds the minimum mhd if it exists and deletes the row and column that it was found in for the association matrix. That track and measurement pair is then returned as the updated track and measurement.
 
-![](pictures/FinalProjectPics/step3_multitargetAssociation_error.png)
+![](pictures/Final_Pics/step3_multitargetAssociation_error.png)
 The results show proper multi-target tracking although due to the program so far only using lidar measurements, there are many ghost tracks that are initialized along the frames and even become tentative as well. 
 
 ## Camera Sensor Fusion Step:
 Finally, the last step involves setting up the camera measurement functions and values along with changing the code to update based on camera measurements as well. The z vector and R matrix are initialized and the get-hx() function uses the direct non-linear transformation from camera coordinates to image coordinates. The in_fov() checks whether an object can be seen in the sensor's field of view.
 
-![](pictures/FinalProjectPics/step4_multitarget_error.png)
+![](pictures/Final_Pics/step4_multitarget_error.png)
 After implementing the fusion part, the results for the multi-target-tracking are improved. The ghost tracks are more quickly deleted since they don't become tentative due to not being detected by the camera sensor and the position of the actual true postive vehicles is more accurate when using the camera measurements and updates as well.
 
 The most difficult parts of the project to complete was figuring out the extended-kalman-filter implementation and when to use the EKF equations in place of regular KF due to the non-linear camera measurement model. Along with this, the logic for track management, when to increase the score, when to decrease the score, and when to delete a track was a bit complicated to understand at first, but after looking at the different scenarios it became easy to understand.
