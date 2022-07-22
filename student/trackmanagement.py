@@ -35,21 +35,44 @@ class Track:
         # - initialize track state and track score with appropriate values
         ############
 
-        self.x = np.matrix([[49.53980697],
-                        [ 3.41006279],
-                        [ 0.91790581],
-                        [ 0.        ],
-                        [ 0.        ],
-                        [ 0.        ]])
-        self.P = np.matrix([[9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 6.4e-03, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+01]])
-        self.state = 'confirmed'
-        self.score = 0
-        
+        # self.x = np.matrix([[49.53980697],
+        #                 [ 3.41006279],
+        #                 [ 0.91790581],
+        #                 [ 0.        ],
+        #                 [ 0.        ],
+        #                 [ 0.        ]])
+
+        # self.P = np.matrix([[9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
+        #                 [0.0e+00, 9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
+        #                 [0.0e+00, 0.0e+00, 6.4e-03, 0.0e+00, 0.0e+00, 0.0e+00],
+        #                 [0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00, 0.0e+00],
+        #                 [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00],
+        #                 [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+01]])
+
+        # self.state = 'confirmed'
+        # self.score = 0
+
+        # student x:
+        self.x = np.matrix(np.zeros((params.dim_state,1)))
+        tempx = np.ones((4,1))
+        tempx[0:3] = meas.z
+        x = meas.sensor.sens_to_veh * tempx
+        self.x[0:3] = x[0:3]
+
+        # student P matrix: Ppos = Mrot * R * Mrot_transpose, P = [[Ppos, zeros], [zeros, Pvel]]
+        # Ppos is 3x3, Pvel is 3x3, P is 6x6
+        Ppos = M_rot * meas.R * M_rot.transpose()
+        Pvel = np.matrix([[params.sigma_p44**2,0,0],
+                          [0,params.sigma_p55**2,0],
+                          [0,0,params.sigma_p66**2]])
+        P = np.matrix(np.zeros((6,6)))
+        P[0:3,0:3] = Ppos
+        P[3:,3:] = Pvel
+        self.P = P
+
+        self.state = 'initialized'
+        self.score = 1./params.window
+
         ############
         # END student code
         ############ 
@@ -101,16 +124,23 @@ class Trackmanagement:
         ############
         
         # decrease score for unassigned tracks
+
         for i in unassigned_tracks:
             track = self.track_list[i]
             # check visibility    
             if meas_list: # if not empty
                 if meas_list[0].sensor.in_fov(track.x):
                     # your code goes here
-                    pass 
+                    track.score-=1./params.window
 
         # delete old tracks   
-
+        for track in self.track_list:
+            if track.state == 'confirmed':
+                if track.score < params.delete_threshold or (track.P[0,0]>params.max_P or track.P[1,1]>params.max_P):
+                    self.delete_track(track)
+            else:
+                if (np.sqrt(track.P[0,0]**2 + track.P[1,1]**2)>params.max_P) or track.score<0.05:
+                    self.delete_track(track)
         ############
         # END student code
         ############ 
@@ -139,8 +169,14 @@ class Trackmanagement:
         # - increase track score
         # - set track state to 'tentative' or 'confirmed'
         ############
-
-        pass
+        if track.score+(1./params.window)>1.0:
+            track.score=1.0
+        else:
+            track.score+=(1./params.window)
+        if track.state == 'initialized' and track.score>(1./params.window):
+            track.state = 'tentative'
+        if track.state == 'tentative' and track.score>=params.confirmed_threshold:
+            track.state = 'confirmed'
         
         ############
         # END student code
